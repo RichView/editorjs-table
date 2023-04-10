@@ -1,7 +1,11 @@
 import Table from './table';
 import * as $ from './utils/dom';
 
-import { IconTable, IconTableWithHeadings, IconTableWithoutHeadings } from '@codexteam/icons';
+import {
+  IconTable,
+  IconTableWithHeadings,
+  IconTableWithoutHeadings
+} from '@codexteam/icons';
 
 /**
  * @typedef {object} TableConfig - configuration that the user can set for the table
@@ -52,7 +56,7 @@ export default class TableBlock {
    * @param {object} api - Editor.js API
    * @param {boolean} readOnly - read-only mode flag
    */
-  constructor({data, config, api, readOnly}) {
+  constructor({ data, config, api, readOnly }) {
     this.api = api;
     this.readOnly = readOnly;
     this.config = config;
@@ -112,7 +116,8 @@ export default class TableBlock {
           this.data.withHeadings = true;
           this.table.setHeadingsSetting(this.data.withHeadings);
         }
-      }, {
+      },
+      {
         label: this.api.i18n.t('Without headings'),
         icon: IconTableWithoutHeadings,
         isActive: !this.data.withHeadings,
@@ -152,8 +157,8 @@ export default class TableBlock {
 
   /**
    * A helper to get config value.
-   * 
-   * @param {string} configName - the key to get from the config. 
+   *
+   * @param {string} configName - the key to get from the config.
    * @param {any} defaultValue - default value if config doesn't have passed key
    * @param {object} savedData - previously saved data. If passed, the key will be got from there, otherwise from the config
    * @returns {any} - config value.
@@ -165,16 +170,23 @@ export default class TableBlock {
       return data[configName] ? data[configName] : defaultValue;
     }
 
-    return this.config && this.config[configName] ? this.config[configName] : defaultValue;
+    return this.config && this.config[configName]
+      ? this.config[configName]
+      : defaultValue;
   }
 
-  /**  
+  /**
    * Table onPaste configuration
    *
    * @public
    */
   static get pasteConfig() {
-    return { tags: ['TABLE', 'TR', 'TH', 'TD'] };
+    return {
+      tags: ['TABLE', 'TR', 'TH', 'TD'],
+      plainPatterns: {
+        table: /^(?=.*\t)[^\t\n]*(\t[^\t\n]*)*(\n[^\t\n]*(\t[^\t\n]*)*)*\n?$/i
+      }
+    };
   }
 
   /**
@@ -185,30 +197,64 @@ export default class TableBlock {
   onPaste(event) {
     const table = event.detail.data;
 
-    /** Check if the first row is a header */
-    const firstRowHeading = table.querySelector(':scope > thead, tr:first-of-type th');
+    switch (event.type) {
+      case 'tag':
+        /** Check if the first row is a header */
+        const firstRowHeading = table.querySelector(
+          ':scope > thead, tr:first-of-type th'
+        );
 
-    /** Get all rows from the table */
-    const rows = Array.from(table.querySelectorAll('tr'));
-    
-    /** Generate a content matrix */
-    const content = rows.map((row) => {
-      /** Get cells from row */
-      const cells = Array.from(row.querySelectorAll('th, td'))
-      
-      /** Return cells content */
-      return cells.map((cell) => cell.innerHTML);
-    });
+        /** Get all rows from the table */
+        const rows = Array.from(table.querySelectorAll('tr'));
 
-    /** Update Tool's data */
-    this.data = {
-      withHeadings: firstRowHeading !== null,
-      content
-    };
+        /** Generate a content matrix */
+        const content = rows.map((row) => {
+          /** Get cells from row */
+          const cells = Array.from(row.querySelectorAll('th, td'));
 
-    /** Update table block */
-    if (this.table.wrapper) {
-      this.table.wrapper.replaceWith(this.render());
+          /** Return cells content */
+          return cells.map((cell) => cell.innerHTML);
+        });
+
+        /** Update Tool's data */
+        this.data = {
+          withHeadings: firstRowHeading !== null,
+          content
+        };
+
+        /** Update table block */
+        if (this.table.wrapper) {
+          this.table.wrapper.replaceWith(this.render());
+        }
+
+        break;
+
+      case 'plain':
+        /** Get all rows from the table */
+        const plainRows = table.split('\n');
+
+        /** Generate a content matrix */
+        const plainContent = plainRows.map((row) => {
+          /** Get cells from row */
+          const cells = row.split('\t');
+
+          /** Return cells content */
+          return cells;
+        });
+
+        /** Update Tool's data */
+        this.data = {
+          withHeadings: true,
+          content: plainContent
+        };
+
+        /** Update table block */
+        if (this.table.wrapper) {
+          this.table.wrapper.replaceWith(this.render());
+        }
+
+      default:
+        break;
     }
   }
 }

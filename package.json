@@ -1,6 +1,6 @@
 {
-  "name": "@editorjs/table",
-  "description": "Table for Editor.js",
+  "name": "@richview/editorjs-table",
+  "description": "Table for Editor.js, forked from 2.2.1",
   "version": "2.2.1",
   "license": "MIT",
   "main": "./dist/table.js",
